@@ -1,0 +1,37 @@
+name: Daily chart check
+
+on:
+  schedule:
+    - cron: "17 13 * * *"   # ~6:17 AM Boise in winter (7:17 AM in summer)
+  workflow_dispatch: {}      # lets you run it any time from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-chart-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Check Apple charts and ratings, email report
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          REPORT_TO: ${{ secrets.REPORT_TO }}
+        run: python scripts/tracker.py
+      - name: Save today's data
+        run: |
+          git config user.name "chart-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/
+          git diff --cached --quiet || git commit -m "Chart data $(TZ=America/Boise date +%F)"
+          git push

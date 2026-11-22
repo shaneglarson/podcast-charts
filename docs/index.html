@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Gametime Guru · Apple Podcasts Charts</title>
+<style>
+  :root{--bg:#f5f5f7;--card:#fff;--ink:#1d1d1f;--muted:#6e6e73;--line:#e5e5ea;--accent:#E8590C;--accent-soft:#fff1e8;--up:#1a7f37;--down:#cf222e;--grid:#ececf0}
+  @media (prefers-color-scheme:dark){:root{--bg:#111113;--card:#1c1c1f;--ink:#f2f2f4;--muted:#a1a1a8;--line:#2e2e33;--accent:#FF8A47;--accent-soft:#2b1d14;--up:#4ac26b;--down:#ff6b6b;--grid:#2a2a2f}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .eyebrow{font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+  h1{margin:2px 0 0;font-size:26px}
+  .sub{color:var(--muted)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .seg{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;background:none;color:var(--ink);padding:7px 12px;font:inherit;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#fff}
+  select,input[type=search]{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .tile .v{font-size:28px;font-weight:700}
+  .tile .l{color:var(--muted);font-size:12px}
+  .tile .d{font-size:12px;font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:15px;margin:0 0 4px}
+  .card .hint{color:var(--muted);font-size:12px;margin-bottom:10px}
+  .chart{position:relative}
+  .chart svg{display:block;width:100%;overflow:visible}
+  .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--card);padding:6px 9px;border-radius:6px;font-size:12px;white-space:nowrap;opacity:0;transition:opacity .1s;transform:translate(-50%,-110%)}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:12px;color:var(--muted);text-align:left;font-weight:600;padding:8px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+  td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:var(--accent-soft)}
+  tr.sel{background:var(--accent-soft)}
+  .up{color:var(--up);font-weight:600}.down{color:var(--down);font-weight:600}.new{color:var(--accent);font-weight:600}.mut{color:var(--muted)}
+  .row2{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px}
+  .empty{color:var(--muted);padding:24px;text-align:center}
+  a{color:var(--accent)}
+  .scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Apple Podcasts chart tracker</div>
+      <h1 id="title">The Gametime Guru</h1>
+      <div class="sub" id="updated">Loading…</div>
+    </div>
+    <div class="controls">
+      <select id="chartSel" aria-label="Chart"></select>
+      <div class="seg" id="range" role="group" aria-label="Date range">
+        <button data-d="7">7D</button><button data-d="30" class="on">30D</button><button data-d="90">90D</button><button data-d="0">All</button>
+      </div>
+      <a id="reportLink" href="latest-report.html">Today's report</a>
+    </div>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="card">
+    <h2>Countries charting per day</h2>
+    <div class="hint" id="trendHint">How many Apple storefronts had the show in the Top 200.</div>
+    <div class="chart" id="trend"></div>
+  </div>
+
+  <div class="card" id="detailCard" hidden>
+    <h2 id="detailTitle">Rank history</h2>
+    <div class="hint">Rank over time (#1 at the top). Gaps are days off the chart.</div>
+    <div class="chart" id="detail"></div>
+  </div>
+
+  <div class="card">
+    <div class="row2">
+      <div><h2>Every country you've charted in</h2><div class="hint" style="margin:0">Click a row to see its rank history. Click headers to sort.</div></div>
+      <div class="controls">
+        <label class="sub"><input type="checkbox" id="onlyToday"> Charting today only</label>
+        <input type="search" id="q" placeholder="Find country…">
+      </div>
+    </div>
+    <div class="scroll"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Star ratings by country</h2>
+    <div class="hint" id="ratingHint"></div>
+    <div class="scroll"><table id="rtbl"><thead></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let H, gid, days = 30, sortKey = "today", sortDir = 1, selected = null;
+const flag = c => [...c.toUpperCase()].map(ch => String.fromCodePoint(0x1F1E6 + ch.charCodeAt(0) - 65)).join("");
+const cname = c => (H.countries && H.countries[c]) || c.toUpperCase();
+const fmtDate = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, {month: "short", day: "numeric"});
+const esc = s => String(s).replace(/[&<>"]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+
+fetch("data/history.json?" + Date.now()).then(r => r.json()).then(h => {
+  H = h;
+  const cfg = H.config || {charts: []};
+  $("#title").textContent = cfg.podcast_name || "Podcast";
+  $("#updated").textContent = "Last checked " + new Date(H.updated).toLocaleString(undefined, {dateStyle: "medium", timeStyle: "short"});
+  cfg.charts.forEach(c => $("#chartSel").insertAdjacentHTML("beforeend", `<option value="${c.genre_id}">${esc(c.name)} · Top ${cfg.chart_limit || 200}</option>`));
+  gid = cfg.charts[0] && cfg.charts[0].genre_id;
+  if (cfg.charts.length < 2) $("#chartSel").hidden = true;
+  render();
+}).catch(() => { $("#updated").textContent = "No data yet — the first daily run hasn't finished."; });
+
+$("#chartSel").onchange = e => { gid = e.target.value; selected = null; render(); };
+$("#range").onclick = e => { if (!e.target.dataset.d) return; days = +e.target.dataset.d;
+  [...$("#range").children].forEach(b => b.classList.toggle("on", b === e.target)); render(); };
+$("#onlyToday").onchange = renderTable; $("#q").oninput = renderTable;
+
+function runs() { const r = H.runs || []; return days ? r.slice(-days) : r; }
+function series() { return (H.charts && H.charts[gid]) || {}; }
+
+function render() { renderTiles(); renderTrend(); renderTable(); renderDetail(); renderRatings(); }
+
+function renderTiles() {
+  const R = H.runs, today = R[R.length - 1], prev = R[R.length - 2], S = series();
+  const on = d => Object.keys(S).filter(c => S[c][d]);
+  const nowC = on(today), prevC = prev ? on(prev) : null;
+  const best = nowC.length ? Math.min(...nowC.map(c => S[c][today])) : null;
+  const bestC = nowC.find(c => S[c][today] === best);
+  const allBest = Math.min(...Object.values(S).flatMap(s => Object.values(s).filter(Boolean)), Infinity);
+  const ever = Object.keys(S).filter(c => Object.values(S[c]).some(Boolean)).length;
+  const rat = Object.entries(H.ratings || {}).map(([c, s]) => s[today]).filter(Boolean);
+  const total = rat.reduce((a, r) => a + r.count, 0);
+  const avg = total ? rat.reduce((a, r) => a + r.avg * r.count, 0) / total : null;
+  const d = prevC ? nowC.length - prevC.length : null;
+  const delta = d === null ? "" : `<div class="d ${d > 0 ? "up" : d < 0 ? "down" : "mut"}">${d > 0 ? "▲ " + d : d < 0 ? "▼ " + (-d) : "no change"} vs. last check</div>`;
+  $("#tiles").innerHTML = [
+    ["Countries charting today", nowC.length, delta],
+    ["Best rank today", best ? "#" + best : "—", bestC ? `<div class="d mut">${flag(bestC)} ${esc(cname(bestC))}</div>` : ""],
+    ["Best rank ever", isFinite(allBest) ? "#" + allBest : "—", ""],
+    ["Countries ever charted", ever, `<div class="d mut">since ${fmtDate(H.runs[0])}</div>`],
+    ["Apple ratings", total ? total.toLocaleString() : "—", avg ? `<div class="d mut">${avg.toFixed(2)}★ across ${rat.length} countries</div>` : ""],
+  ].map(([l, v, x]) => `<div class="tile"><div class="l">${l}</div><div class="v">${v}</div>${x}</div>`).join("");
+}
+
+function svgChart(el, pts, {invert = false, yLabel = v => v, tip, height = 200} = {}) {
+  // pts: [{x:date, y:number|null}]
+  const W = el.clientWidth || 800, Ht = height, m = {l: 40, r: 12, t: 10, b: 24};
+  const iw = W - m.l - m.r, ih = Ht - m.t - m.b;
+  const ys = pts.map(p => p.y).filter(v => v != null);
+  if (!ys.length) { el.innerHTML = `<div class="empty">No data in this range.</div>`; return; }
+  let lo = invert ? 1 : 0, hi = Math.max(...ys);
+  if (invert) { lo = Math.max(1, Math.min(...ys) - 5); hi = Math.min(200, hi + 5); }
+  if (hi === lo) hi = lo + 1;
+  const X = i => m.l + (pts.length === 1 ? iw / 2 : i * iw / (pts.length - 1));
+  const Y = v => invert ? m.t + (v - lo) / (hi - lo) * ih : m.t + ih - (v - lo) / (hi - lo) * ih;
+  const ticks = 4, tk = [...Array(ticks + 1)].map((_, i) => Math.round(lo + (hi - lo) * i / ticks));
+  let g = tk.map(v => `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${yLabel(v)}</text>`).join("");
+  const step = Math.max(1, Math.ceil(pts.length / 7));
+  g += pts.map((p, i) => i % step === 0 || i === pts.length - 1 ? `<text x="${X(i)}" y="${Ht - 6}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtDate(p.x)}</text>` : "").join("");
+  let path = "", pen = false;
+  pts.forEach((p, i) => { if (p.y == null) { pen = false; return; } path += (pen ? "L" : "M") + X(i) + " " + Y(p.y); pen = true; });
+  const dots = pts.map((p, i) => p.y == null ? "" : `<circle cx="${X(i)}" cy="${Y(p.y)}" r="${pts.length > 40 ? 0 : 4}" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>`).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${Ht}" height="${Ht}">${g}<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}
+    <line class="xh" y1="${m.t}" y2="${m.t + ih}" stroke="var(--muted)" stroke-dasharray="3 3" opacity="0"/>
+    <circle class="hd" r="5" fill="var(--accent)" stroke="var(--card)" stroke-width="2" opacity="0"/>
+    <rect x="${m.l}" y="0" width="${iw}" height="${Ht}" fill="transparent"/></svg><div class="tip"></div>`;
+  const svg = el.querySelector("svg"), t = el.querySelector(".tip"), xh = el.querySelector(".xh"), hd = el.querySelector(".hd");
+  svg.onmousemove = e => {
+    const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width;
+    const i = Math.max(0, Math.min(pts.length - 1, Math.round((x - m.l) / (iw / Math.max(1, pts.length - 1)))));
+    const p = pts[i]; xh.setAttribute("x1", X(i)); xh.setAttribute("x2", X(i)); xh.setAttribute("opacity", 1);
+    if (p.y != null) { hd.setAttribute("cx", X(i)); hd.setAttribute("cy", Y(p.y)); hd.setAttribute("opacity", 1); } else hd.setAttribute("opacity", 0);
+    t.innerHTML = tip(p); t.style.opacity = 1; t.style.left = (X(i) * r.width / W) + "px"; t.style.top = ((p.y != null ? Y(p.y) : m.t + ih / 2) * r.height / Ht) + "px";
+  };
+  svg.onmouseleave = () => { t.style.opacity = 0; xh.setAttribute("opacity", 0); hd.setAttribute("opacity", 0); };
+}
+
+function renderTrend() {
+  const S = series();
+  const pts = runs().map(d => ({x: d, y: Object.keys(S).filter(c => S[c][d]).length}));
+  svgChart($("#trend"), pts, {tip: p => `<b>${fmtDate(p.x)}</b> · ${p.y} countries`});
+}
+
+function renderDetail() {
+  if (!selected) { $("#detailCard").hidden = true; return; }
+  $("#detailCard").hidden = false;
+  $("#detailTitle").textContent = `${flag(selected)} ${cname(selected)} · rank history`;
+  const s = series()[selected] || {};
+  const pts = runs().map(d => ({x: d, y: s[d] || null}));
+  svgChart($("#detail"), pts, {invert: true, yLabel: v => "#" + v, tip: p => `<b>${fmtDate(p.x)}</b> · ${p.y ? "#" + p.y : "not charting"}`});
+}
+
+function spark(s, R) {
+  const vals = R.map(d => s[d] || null), W = 90, Ht = 22;
+  const ys = vals.filter(Boolean); if (!ys.length) return "";
+  const lo = Math.min(...ys), hi = Math.max(...ys), span = Math.max(1, hi - lo);
+  let p = "", pen = false;
+  vals.forEach((v, i) => { if (!v) { pen = false; return; } const x = R.length === 1 ? W / 2 : i * W / (R.length - 1), y = 3 + (v - lo) / span * (Ht - 6);
+    p += (pen ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1); pen = true; });
+  const lastI = vals.length - 1, last = vals[lastI];
+  const dot = last ? `<circle cx="${W}" cy="${3 + (last - lo) / span * (Ht - 6)}" r="2.5" fill="var(--accent)"/>` : "";
+  return `<svg width="${W}" height="${Ht}" style="overflow:visible"><path d="${p}" fill="none" stroke="var(--accent)" stroke-width="1.5"/>${dot}</svg>`;
+}
+
+function renderTable() {
+  const S = series(), R = H.runs, today = R[R.length - 1], prev = R[R.length - 2], rr = runs();
+  let rows = Object.keys(S).filter(c => Object.values(S[c]).some(Boolean)).map(c => {
+    const s = S[c], vals = Object.values(s).filter(Boolean);
+    const lastOn = Object.keys(s).filter(d => s[d]).sort().pop();
+    return {c, name: cname(c), today: s[today] || null, prev: prev ? s[prev] || null : null, best: Math.min(...vals), daysOn: vals.length, lastOn, s};
+  });
+  if ($("#onlyToday").checked) rows = rows.filter(r => r.today);
+  const q = $("#q").value.trim().toLowerCase(); if (q) rows = rows.filter(r => r.name.toLowerCase().includes(q) || r.c === q);
+  const key = {today: r => r.today ?? 999, name: r => r.name, best: r => r.best, daysOn: r => -r.daysOn, change: r => r.today && r.prev ? -(r.prev - r.today) : 999, lastOn: r => r.lastOn};
+  rows.sort((a, b) => { const x = key[sortKey](a), y = key[sortKey](b); return (x > y ? 1 : x < y ? -1 : 0) * sortDir; });
+  const cols = [["name", "Country", ""], ["today", "Today", "num"], ["change", "Change", "num"], ["best", "Best ever", "num"], ["daysOn", "Days charted", "num"], ["lastOn", "Last charted", "num"], [null, `Trend (${days ? days + "D" : "all"})`, "num"]];
+  $("#tbl thead").innerHTML = "<tr>" + cols.map(([k, l, cl]) => `<th class="${cl}" data-k="${k || ""}">${l}${k === sortKey ? (sortDir > 0 ? " ↑" : " ↓") : ""}</th>`).join("") + "</tr>";
+  $("#tbl thead").onclick = e => { const k = e.target.dataset.k; if (!k) return; sortDir = k === sortKey ? -sortDir : 1; sortKey = k; renderTable(); };
+  if (!rows.length) { $("#tbl tbody").innerHTML = `<tr><td colspan="7" class="empty">${Object.keys(S).length ? "No countries match." : "Not charting anywhere yet."}</td></tr>`; return; }
+  $("#tbl tbody").innerHTML = rows.map(r => {
+    let ch = '<span class="mut">–</span>';
+    if (r.today && r.prev) { const d = r.prev - r.today; ch = d > 0 ? `<span class="up">▲ ${d}</span>` : d < 0 ? `<span class="down">▼ ${-d}</span>` : ch; }
+    else if (r.today && prev) ch = '<span class="new">NEW</span>';
+    else if (!r.today && r.prev) ch = '<span class="down">OUT</span>';
+    return `<tr data-c="${r.c}" class="${r.c === selected ? "sel" : ""}"><td>${flag(r.c)} ${esc(r.name)}</td><td class="num">${r.today ? "<b>#" + r.today + "</b>" : '<span class="mut">—</span>'}</td><td class="num">${ch}</td><td class="num">#${r.best}</td><td class="num">${r.daysOn}</td><td class="num">${fmtDate(r.lastOn)}</td><td class="num">${spark(r.s, rr)}</td></tr>`;
+  }).join("");
+  $("#tbl tbody").onclick = e => { const tr = e.target.closest("tr[data-c]"); if (!tr) return; selected = selected === tr.dataset.c ? null : tr.dataset.c; renderTable(); renderDetail(); if (selected) $("#detailCard").scrollIntoView({behavior: "smooth", block: "nearest"}); };
+}
+
+function renderRatings() {
+  const R = H.runs, today = R[R.length - 1], first = runs()[0];
+  const rows = Object.entries(H.ratings || {}).map(([c, s]) => {
+    const now = s[today]; if (!now) return null;
+    const base = s[first];
+    return {c, avg: now.avg, count: now.count, gain: base ? now.count - base.count : null};
+  }).filter(Boolean).sort((a, b) => b.count - a.count);
+  const total = rows.reduce((a, r) => a + r.count, 0);
+  $("#ratingHint").textContent = rows.length ? `${total.toLocaleString()} ratings across ${rows.length} countries. "Gained" covers the selected range.` : "No ratings found yet.";
+  $("#rtbl thead").innerHTML = `<tr><th>Country</th><th class="num">Stars</th><th class="num">Ratings</th><th class="num">Gained (${days ? days + "D" : "all"})</th></tr>`;
+  $("#rtbl tbody").innerHTML = rows.map(r => `<tr><td>${flag(r.c)} ${esc(cname(r.c))}</td><td class="num">${r.avg.toFixed(1)}★</td><td class="num">${r.count.toLocaleString()}</td><td class="num">${r.gain ? `<span class="up">+${r.gain}</span>` : '<span class="mut">–</span>'}</td></tr>`).join("");
+}
+addEventListener("resize", () => H && (renderTrend(), renderDetail()));
+</script>
+</body>
+</html>

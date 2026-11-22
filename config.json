@@ -1,0 +1,11 @@
+{
+  "podcast_id": "1195653965",
+  "podcast_name": "The Gametime Guru",
+  "charts": [
+    { "genre_id": "1548", "name": "Basketball" }
+  ],
+  "chart_limit": 200,
+  "track_ratings": true,
+  "priority_countries": ["us", "ca", "gb", "au", "br"],
+  "dashboard_url": "https://shaneglarson.github.io/podcast-charts/"
+}
